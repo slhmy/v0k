@@ -1,0 +1,26 @@
+{
+  "name": "@v0k/cli",
+  "version": "0.1.0",
+  "description": "Semantic-level intelligent CLI agent for developers",
+  "license": "MIT",
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "bin": {
+    "v0k": "./bin/v0k.js"
+  },
+  "files": [
+    "bin/",
+    "install.js"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slhmy/v0k.git"
+  },
+  "keywords": [
+    "cli",
+    "agent",
+    "curl",
+    "developer-tools"
+  ]
+}
