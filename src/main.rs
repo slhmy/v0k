@@ -230,7 +230,9 @@ async fn handle_external_command(config: &V0kConfig, raw_args: Vec<String>) -> R
         return executor::execute(original).await;
     }
 
-    let review = match brain::review_command(config, &program, &args).await {
+    let program_exists = which::which(&program).is_ok();
+
+    let review = match brain::review_command(config, &program, &args, program_exists).await {
         Ok(review) => review,
         Err(err) => {
             eprintln!("warning: AI review failed: {err}");
@@ -264,6 +266,14 @@ async fn handle_external_command(config: &V0kConfig, raw_args: Vec<String>) -> R
         )?;
         if use_rewrite {
             return executor::execute(rewritten).await;
+        }
+
+        if which::which(&original.program).is_err() {
+            eprintln!(
+                "{}",
+                "Aborting because original input is not a recognized command.".yellow()
+            );
+            return Err("aborted by user".into());
         }
 
         if is_dangerous(&original.program, &original.args) {

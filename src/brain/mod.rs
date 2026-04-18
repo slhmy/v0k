@@ -65,15 +65,21 @@ pub async fn review_command(
     config: &V0kConfig,
     program: &str,
     args: &[String],
+    exists_in_path: bool,
 ) -> Result<BrainResponse, String> {
     #[derive(Serialize)]
     struct ReviewInput<'a> {
         program: &'a str,
         args: &'a [String],
+        exists_in_path: bool,
     }
 
-    let review_input = serde_json::to_string(&ReviewInput { program, args })
-        .map_err(|e| format!("failed to serialize review input: {e}"))?;
+    let review_input = serde_json::to_string(&ReviewInput {
+        program,
+        args,
+        exists_in_path,
+    })
+    .map_err(|e| format!("failed to serialize review input: {e}"))?;
 
     run_chat_completion(config, prompt::review_prompt(), review_input).await
 }

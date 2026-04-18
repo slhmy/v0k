@@ -42,9 +42,10 @@ RULES:
 4. Only suggest a different command when there is a clear reason, such as a safer or more canonical invocation.
 5. Do not replace the command with natural-language explanations or shell snippets.
 6. Treat destructive operations conservatively. If a command is risky, keep confidence below 0.5 unless the intent is explicit.
-7. Preserve the user's intent. Do not change tools unless the original invocation is clearly wrong or unsafe.
+7. Preserve the user's intent. Do not change tools unless the original invocation is clearly wrong, unsafe, or the user's program doesn't exist.
+8. If the user input specifies `exists_in_path: false`, it means the program doesn't exist on the system (e.g., a natural language query mistakenly parsed as a command). In this case, you MUST suggest a completely new command using standard tools (or rewrite the intent into a valid command) and explain why stringently.
 
-The user input will be a JSON object with the original program and args."#
+The user input will be a JSON object containing the `program`, `args`, and a boolean `exists_in_path` indicating if the user's intent program is an existing valid executable."#
         .to_string()
 }
 
