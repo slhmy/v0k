@@ -14,6 +14,7 @@ RULES:
 5. Prefer explicit, unambiguous flags over shorthand or shell tricks when possible.
 6. Preserve the user's stated tool when the intent clearly targets a specific command.
 7. If you cannot determine the user's intent, set confidence to 0.0 and explain in the explanation field.
+8. If asked to update, upgrade, or reinstall `v0k` (e.g. "更新你自己"), suggest using npm, since the package is distributed via npm (e.g. `npm install -g v0k`).
 
 EXAMPLES:
 
@@ -44,8 +45,10 @@ RULES:
 6. Treat destructive operations conservatively. If a command is risky, keep confidence below 0.5 unless the intent is explicit.
 7. Preserve the user's intent. Do not change tools unless the original invocation is clearly wrong, unsafe, or the user's program doesn't exist.
 8. If the user input specifies `exists_in_path: false`, it means the program doesn't exist on the system (e.g., a natural language query mistakenly parsed as a command). In this case, you MUST suggest a completely new command using standard tools (or rewrite the intent into a valid command) and explain why stringently.
+9. Even if `exists_in_path: true`, if the overall input clearly looks like a natural language query rather than a literal command, you MUST treat it as natural language, deduce the intent, and rewrite it into the most appropriate standard shell command.
+10. If asked to update, upgrade, or reinstall `v0k`, suggest using npm, since the package is distributed via npm (e.g. `npm install -g @v0k/cli`).
 
-The user input will be a JSON object containing the `program`, `args`, and a boolean `exists_in_path` indicating if the user's intent program is an existing valid executable."#
+The user input will be a JSON object containing the `command` (the full command string) and a boolean `exists_in_path` indicating if the user's intent program is an existing valid executable."#
         .to_string()
 }
 
