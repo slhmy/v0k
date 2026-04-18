@@ -22,7 +22,7 @@ Say goodbye to memorizing complex flags and sifting through endless man pages!
 ### Installation
 
 ```bash
-npm install -g v0k@cli
+npm install -g @v0k/cli
 ```
 
 ### Initial Setup
