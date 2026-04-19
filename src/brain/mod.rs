@@ -98,6 +98,7 @@ pub async fn analyze_failure(
     stdout: &str,
     stderr: &str,
     exit_code: i32,
+    wrapper_hint: Option<&str>,
 ) -> Result<HealResponse, String> {
     #[derive(Serialize)]
     struct FailureInput<'a> {
@@ -105,6 +106,8 @@ pub async fn analyze_failure(
         stdout: &'a str,
         stderr: &'a str,
         exit_code: i32,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        wrapper_hint: Option<&'a str>,
     }
 
     let input = serde_json::to_string(&FailureInput {
@@ -112,6 +115,7 @@ pub async fn analyze_failure(
         stdout,
         stderr,
         exit_code,
+        wrapper_hint,
     })
     .map_err(|e| format!("failed to serialize failure input: {e}"))?;
 

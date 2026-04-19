@@ -225,6 +225,14 @@ async fn handle_external_command(config: &V0kConfig, raw_args: Vec<String>) -> R
         }
     };
 
+    // If AI identified a wrapper command, re-infer with wrapper help for better accuracy
+    if wrappers::is_known_wrapper(&review.program) {
+        let wrapper_hint = wrappers::ai_prompt_extension(&review.program);
+        let user_intent = format!("{} {}", review.program, review.args.join(" "));
+        let refined = brain::infer_with_extension(config, &user_intent, wrapper_hint).await?;
+        return execute_brain_response(config, refined).await;
+    }
+
     let rewritten = prepared_command(review.program.clone(), review.args.clone());
     let changed = command_changed(&original, &rewritten);
 
@@ -331,6 +339,9 @@ async fn execute_with_healing(config: &V0kConfig, cmd: PreparedCommand) -> Resul
         eprintln!("{}", "Command failed, analyzing...".yellow());
         let captured = executor::execute_captured(current_cmd.clone()).await;
 
+        // Get wrapper help if this is a known wrapper
+        let wrapper_hint = wrappers::ai_prompt_extension(&current_cmd.program);
+
         // Analyze failure
         let heal = match brain::analyze_failure(
             config,
@@ -338,6 +349,7 @@ async fn execute_with_healing(config: &V0kConfig, cmd: PreparedCommand) -> Resul
             &captured.stdout,
             &captured.stderr,
             captured.exit_code,
+            wrapper_hint.as_deref(),
         )
         .await
         {

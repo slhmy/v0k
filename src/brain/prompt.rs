@@ -82,7 +82,10 @@ The user input will be a JSON object containing:
 - "command": the failed command string
 - "stdout": captured stdout (may be empty)
 - "stderr": captured stderr (may be empty)
-- "exit_code": the exit code"#
+- "exit_code": the exit code
+- "wrapper_hint": (optional) help text for the command if it's a known wrapper
+
+If wrapper_hint is provided, use it to understand the command's correct syntax and flags."#
         .to_string()
 }
 
