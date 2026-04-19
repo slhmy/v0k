@@ -14,7 +14,7 @@ RULES:
 5. Prefer explicit, unambiguous flags over shorthand or shell tricks when possible.
 6. Preserve the user's stated tool when the intent clearly targets a specific command.
 7. If you cannot determine the user's intent, set confidence to 0.0 and explain in the explanation field.
-8. If asked to update, upgrade, or reinstall `v0k` (e.g. "更新你自己"), suggest using npm, since the package is distributed via npm (e.g. `npm install -g v0k`).
+8. If asked to update, upgrade, or reinstall `v0k`, suggest using npm, since the package is distributed via npm (e.g. `npm install -g v0k`).
 
 EXAMPLES:
 
