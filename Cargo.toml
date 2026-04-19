@@ -21,3 +21,7 @@ regex = "1"
 rpassword = "7.4.0"
 colored = "3.1.1"
 which = "8.0.2"
+
+[dev-dependencies]
+serial_test = "3"
+crossbeam-channel = "0.5"

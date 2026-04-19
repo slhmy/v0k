@@ -1,3 +1,5 @@
+use crossbeam_channel as channel;
+use serial_test::serial;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -33,12 +35,28 @@ fn isolated_v0k_bin(test_name: &str) -> Command {
 
 fn start_mock_ai_server(response_body: &str) -> (String, thread::JoinHandle<()>) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("failed to bind mock server");
+    // Set listener to non-blocking to check if ready
+    listener
+        .set_nonblocking(true)
+        .expect("failed to set nonblocking");
+
     let addr = listener
         .local_addr()
         .expect("failed to read mock server addr");
     let body = response_body.to_string();
 
+    // Channel to signal when server is ready to accept
+    let (ready_tx, ready_rx) = channel::bounded(1);
+
     let handle = thread::spawn(move || {
+        // Set back to blocking for actual accept
+        listener
+            .set_nonblocking(false)
+            .expect("failed to set blocking");
+
+        // Signal ready before accepting
+        ready_tx.send(()).expect("failed to signal ready");
+
         let (mut stream, _) = listener.accept().expect("failed to accept connection");
         let mut buffer = [0_u8; 4096];
         let _ = stream.read(&mut buffer);
@@ -54,13 +72,14 @@ fn start_mock_ai_server(response_body: &str) -> (String, thread::JoinHandle<()>)
             .expect("failed to write mock response");
     });
 
-    // Small delay to ensure server is ready to accept connections
-    std::thread::sleep(std::time::Duration::from_millis(10));
+    // Wait for server to be ready before returning
+    ready_rx.recv().expect("server failed to start");
 
     (format!("http://{addr}/v1"), handle)
 }
 
 #[test]
+#[serial]
 fn test_curl_url_only_defaults_get() {
     let response = r#"{"choices":[{"message":{"content":"{\"program\":\"curl\",\"args\":[\"https://httpbin.org/get\"],\"explanation\":\"\",\"confidence\":1.0}"}}]}"#;
     let (api_base, server) = start_mock_ai_server(response);
@@ -78,6 +97,7 @@ fn test_curl_url_only_defaults_get() {
 }
 
 #[test]
+#[serial]
 fn test_curl_method_and_url() {
     let response = r#"{"choices":[{"message":{"content":"{\"program\":\"curl\",\"args\":[\"--help\"],\"explanation\":\"\",\"confidence\":1.0}"}}]}"#;
     let (api_base, server) = start_mock_ai_server(response);
@@ -101,6 +121,7 @@ fn test_curl_method_and_url() {
 }
 
 #[test]
+#[serial]
 fn test_curl_no_args_error() {
     let output = isolated_v0k_bin("curl-no-args")
         .args(["curl"])
@@ -112,6 +133,7 @@ fn test_curl_no_args_error() {
 }
 
 #[test]
+#[serial]
 fn test_ask_no_api_key_error() {
     // Without V0K_API_KEY, ask should fail gracefully
     let output = isolated_v0k_bin("ask-no-api-key")
@@ -124,6 +146,7 @@ fn test_ask_no_api_key_error() {
 }
 
 #[test]
+#[serial]
 fn test_curl_natural_language_no_api_key() {
     // Natural language input without API key should give helpful error
     let output = isolated_v0k_bin("curl-no-api-key")
@@ -136,6 +159,7 @@ fn test_curl_natural_language_no_api_key() {
 }
 
 #[test]
+#[serial]
 fn test_no_args_shows_help() {
     let output = v0k_bin().output().expect("failed to run");
     // clap exits with error when no subcommand is provided
@@ -143,6 +167,7 @@ fn test_no_args_shows_help() {
 }
 
 #[test]
+#[serial]
 fn test_unknown_command_passes_through_without_ai() {
     let output = isolated_v0k_bin("unknown-pass-through")
         .args(["echo", "hello"])
@@ -156,6 +181,7 @@ fn test_unknown_command_passes_through_without_ai() {
 }
 
 #[test]
+#[serial]
 fn test_unknown_command_ai_review_without_rewrite() {
     let response = r#"{"choices":[{"message":{"content":"{\"program\":\"echo\",\"args\":[\"hello\"],\"explanation\":\"The command already looks correct.\",\"confidence\":0.98}"}}]}"#;
     let (api_base, server) = start_mock_ai_server(response);
@@ -177,6 +203,7 @@ fn test_unknown_command_ai_review_without_rewrite() {
 }
 
 #[test]
+#[serial]
 fn test_unknown_command_ai_rewrite_requires_confirmation() {
     let response = r#"{"choices":[{"message":{"content":"{\"program\":\"printf\",\"args\":[\"hello\\n\"],\"explanation\":\"Use printf for a predictable literal newline.\",\"confidence\":0.94}"}}]}"#;
     let (api_base, server) = start_mock_ai_server(response);
